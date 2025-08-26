@@ -145,7 +145,7 @@ export default function HomePage() {
   if (!gameState || gameState.status === 'idle' || !isPlaying) {
     return (
       <main className={cn(
-        'min-h-screen bg-gradient-to-br from-primary-50 via-white to-secondary-50',
+        'min-h-screen bg-gradient-to-br from-primary-50 via-white to-primary-100',
         'px-4 py-8 sm:px-6 lg:px-8'
       )}>
         <div className="mx-auto max-w-4xl space-y-6">

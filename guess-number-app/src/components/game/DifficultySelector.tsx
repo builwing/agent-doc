@@ -93,11 +93,11 @@ export const DifficultySelector: React.FC<DifficultySelectorProps> = ({
             <Card
               key={difficulty}
               interactive
-              variant={isSelected ? display.color : 'default'}
+              variant='default'
               className={cn(
                 'cursor-pointer transition-all duration-300',
                 'hover:scale-105 hover:shadow-xl',
-                isSelected && 'ring-2 ring-offset-4 ring-primary-500',
+                isSelected && 'ring-4 ring-offset-2 ring-primary-500 bg-primary-50 border-primary-300',
                 isHovered && !isSelected && 'scale-102 shadow-lg'
               )}
               onClick={() => handleCardClick(difficulty)}
@@ -119,7 +119,7 @@ export const DifficultySelector: React.FC<DifficultySelectorProps> = ({
                     level={3} 
                     className={cn(
                       'text-xl font-bold',
-                      isSelected && 'text-white'
+                      isSelected ? 'text-gray-900' : 'text-neutral-900'
                     )}
                   >
                     {display.title}
@@ -142,7 +142,7 @@ export const DifficultySelector: React.FC<DifficultySelectorProps> = ({
                 {/* 説明テキスト */}
                 <p className={cn(
                   'text-sm text-center leading-relaxed',
-                  isSelected ? 'text-white/90' : 'text-neutral-600'
+                  isSelected ? 'text-gray-800' : 'text-neutral-600'
                 )}>
                   {display.description}
                 </p>
@@ -151,7 +151,7 @@ export const DifficultySelector: React.FC<DifficultySelectorProps> = ({
                 <div className="space-y-3">
                   <div className={cn(
                     'grid grid-cols-1 gap-2 text-xs',
-                    isSelected ? 'text-white/80' : 'text-neutral-500'
+                    isSelected ? 'text-gray-700' : 'text-neutral-500'
                   )}>
                     <div className="flex justify-between">
                       <span>数値範囲:</span>
@@ -174,7 +174,7 @@ export const DifficultySelector: React.FC<DifficultySelectorProps> = ({
                 <div className="space-y-2">
                   <h4 className={cn(
                     'text-xs font-semibold',
-                    isSelected ? 'text-white' : 'text-neutral-700'
+                    isSelected ? 'text-gray-800' : 'text-neutral-700'
                   )}>
                     特徴:
                   </h4>
@@ -184,7 +184,7 @@ export const DifficultySelector: React.FC<DifficultySelectorProps> = ({
                         key={index}
                         className={cn(
                           'text-xs flex items-center',
-                          isSelected ? 'text-white/90' : 'text-neutral-600'
+                          isSelected ? 'text-gray-700' : 'text-neutral-600'
                         )}
                       >
                         <span className="mr-2 text-xs">•</span>
