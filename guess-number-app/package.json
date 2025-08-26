@@ -13,7 +13,11 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "prepare": "husky install",
-    "validate": "npm run type-check && npm run lint && npm run format:check",
+    "test": "vitest",
+    "test:watch": "vitest --watch",
+    "test:coverage": "vitest --coverage",
+    "test:ui": "vitest --ui",
+    "validate": "npm run type-check && npm run lint && npm run format:check && npm run test",
     "clean": "rm -rf .next out dist"
   },
   "keywords": [
@@ -28,13 +32,17 @@
   "author": "GuessNumber Team",
   "license": "MIT",
   "dependencies": {
+    "clsx": "^2.1.1",
     "next": "^15.5.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
+    "tailwind-merge": "^3.3.1",
     "zustand": "^5.0.8"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.12",
+    "@testing-library/jest-dom": "^6.8.0",
+    "@testing-library/react": "^16.3.0",
     "@types/node": "^24.3.0",
     "@types/react": "^19.1.11",
     "@types/react-dom": "^19.1.7",
@@ -42,12 +50,14 @@
     "eslint": "^9.34.0",
     "eslint-config-next": "^15.5.0",
     "husky": "^9.1.7",
+    "jsdom": "^26.1.0",
     "lint-staged": "^16.1.5",
     "next-pwa": "^5.6.0",
     "postcss": "^8.5.6",
     "prettier": "^3.6.2",
     "tailwindcss": "^4.1.12",
-    "typescript": "^5.9.2"
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
