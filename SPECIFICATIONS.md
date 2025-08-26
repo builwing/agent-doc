@@ -710,6 +710,317 @@ jobs:
 
 ---
 
+## 13. データフロー図と状態遷移
+
+### 13.1 システムアーキテクチャ図
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        GuessNumber PWA                          │
+│                     (Next.js 15 + TypeScript)                  │
+├─────────────────────────────────────────────────────────────────┤
+│  Frontend Layer (Presentation)                                 │
+│  ┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐   │
+│  │   UI Components │ │   Layout System │ │  Animation Engine│   │
+│  │                 │ │                 │ │                 │   │
+│  │ • GameBoard     │ │ • Responsive    │ │ • Framer Motion │   │
+│  │ • InputField    │ │ • Mobile First  │ │ • Transitions   │   │
+│  │ • ScoreDisplay  │ │ • Accessibility │ │ • Feedback      │   │
+│  │ • HintDisplay   │ │ • PWA Shell     │ │ • Micro-interact│   │
+│  └─────────────────┘ └─────────────────┘ └─────────────────┘   │
+├─────────────────────────────────────────────────────────────────┤
+│  Application Layer (Business Logic)                            │
+│  ┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐   │
+│  │  Game Engine    │ │  State Manager  │ │  Storage Service│   │
+│  │                 │ │                 │ │                 │   │
+│  │ • Game Logic    │ │ • Zustand Store │ │ • localStorage  │   │
+│  │ • Score Calc    │ │ • Game State    │ │ • Data Persist  │   │
+│  │ • Hint Generator│ │ • User Settings │ │ • Cache Strategy│   │
+│  │ • Input Validator│ │ • History      │ │ • Sync Logic    │   │
+│  └─────────────────┘ └─────────────────┘ └─────────────────┘   │
+├─────────────────────────────────────────────────────────────────┤
+│  Infrastructure Layer                                          │
+│  ┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐   │
+│  │  PWA Services   │ │  Browser APIs   │ │  Build System   │   │
+│  │                 │ │                 │ │                 │   │
+│  │ • Service Worker│ │ • Web Storage   │ │ • Next.js       │   │
+│  │ • Cache Strategy│ │ • Notifications │ │ • Webpack       │   │
+│  │ • Offline Mode  │ │ • Visibility API│ │ • TypeScript    │   │
+│  │ • App Install   │ │ • Performance   │ │ • Tailwind CSS  │   │
+│  └─────────────────┘ └─────────────────┘ └─────────────────┘   │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### 13.2 LocalStorage APIインターフェース仕様
+
+```typescript
+// LocalStorage データ構造とインターフェース定義
+interface StorageInterface {
+  // ゲーム状態データ
+  gameState: {
+    key: 'gn_current_game',
+    schema: GameState,
+    expiry: '24h',        // 24時間でタイムアウト
+    encryption: false,    // MVP版では平文
+    compression: true     // JSON圧縮
+  },
+  
+  // ユーザー設定
+  userSettings: {
+    key: 'gn_settings',
+    schema: UserSettings,
+    expiry: 'never',      // 永続保存
+    encryption: false,
+    compression: false,
+    migration: true       // バージョン間移行対応
+  },
+  
+  // ベストスコア記録
+  bestRecords: {
+    key: 'gn_best_records',
+    schema: Record<Difficulty, BestRecord>,
+    expiry: 'never',
+    encryption: false,
+    compression: true
+  },
+  
+  // プレイ統計
+  playStatistics: {
+    key: 'gn_statistics',
+    schema: PlayStatistics,
+    expiry: '30d',        // 30日間保存
+    encryption: false,
+    compression: true,
+    aggregation: true     // 統計データの集約
+  }
+}
+
+// StorageService実装インターフェース
+interface IStorageService {
+  // 基本操作
+  get<T>(key: string, schema: any): Promise<T | null>;
+  set<T>(key: string, data: T, options?: StorageOptions): Promise<void>;
+  remove(key: string): Promise<void>;
+  clear(): Promise<void>;
+  
+  // 高度な操作
+  exists(key: string): Promise<boolean>;
+  getSize(key?: string): Promise<number>;
+  
+  // データ検証
+  validate<T>(data: any, schema: any): T;
+  migrate(key: string, oldVersion: string, newVersion: string): Promise<void>;
+  
+  // エラーハンドリング
+  handleQuotaExceeded(): Promise<void>;
+  handleCorruption(key: string): Promise<void>;
+}
+```
+
+---
+
+## 14. KPI定義と成功指標
+
+### 14.1 定量的KPI
+
+#### ユーザーエンゲージメントKPI
+```typescript
+const ENGAGEMENT_KPIS = {
+  // 基本エンゲージメント
+  dailyActiveUsers: {
+    target: '100+ DAU',
+    measurement: 'unique localStorage identifiers per day',
+    tracking: 'client-side analytics'
+  },
+  
+  sessionDuration: {
+    target: '平均3分以上',
+    measurement: 'time from app start to close',
+    benchmark: '短時間ゲームとしては理想的'
+  },
+  
+  gameCompletionRate: {
+    target: '85%以上',
+    measurement: 'games finished / games started',
+    segmentation: '難易度別に分析'
+  },
+  
+  retentionRate: {
+    target: 'Day1: 60%, Day7: 30%',
+    measurement: 'returning users with localStorage data',
+    importance: '習慣化の指標'
+  }
+};
+
+const PERFORMANCE_KPIS = {
+  // テクニカルパフォーマンス
+  loadTime: {
+    target: 'FCP < 2秒、LCP < 2.5秒',
+    measurement: 'Core Web Vitals',
+    tools: 'Lighthouse、RUM'
+  },
+  
+  errorRate: {
+    target: '<0.1%',
+    measurement: 'JavaScript errors / total sessions',
+    monitoring: 'browser console + error boundary'
+  },
+  
+  offlineUsability: {
+    target: '機能制限なし100%',
+    measurement: 'offline game completion rate',
+    verification: 'PWA offline testing'
+  },
+  
+  crossBrowserCompatibility: {
+    target: '主要ブラウザ95%+',
+    measurement: 'feature compatibility matrix',
+    browsers: 'Chrome, Firefox, Safari, Edge'
+  }
+};
+```
+
+#### ビジネス価値KPI
+```typescript
+const BUSINESS_KPIS = {
+  // プロダクト成功指標
+  userSatisfaction: {
+    target: '4.5/5.0以上',
+    measurement: 'in-app feedback + usage patterns',
+    factors: 'ease of use, entertainment value, performance'
+  },
+  
+  organicGrowth: {
+    target: '月次10%成長',
+    measurement: 'new user acquisition without paid advertising',
+    channels: 'word of mouth, social sharing, SEO'
+  },
+  
+  technicalDebt: {
+    target: '<5%',
+    measurement: 'code complexity, dependency updates, bug count',
+    maintenance: 'sustainable long-term development'
+  },
+  
+  educationalValue: {
+    target: '学習リソースとして80%満足度',
+    measurement: 'developer feedback, code reuse, teaching adoption',
+    audience: 'programming learners, instructors'
+  }
+};
+```
+
+### 14.2 定性的成功基準
+
+#### ユーザー体験品質
+```typescript
+const UX_QUALITY_CRITERIA = {
+  // 直感性・学習容易性
+  learnability: {
+    criteria: 'チュートリアルなしで60秒以内にゲーム完了',
+    validation: '初回ユーザーテスト',
+    acceptance: '90%のユーザーが直感的操作可能'
+  },
+  
+  // アクセシビリティ
+  accessibility: {
+    criteria: 'WCAG 2.1 AA準拠',
+    validation: 'axe-core, manual testing',
+    acceptance: '障害のあるユーザーも独立してプレイ可能'
+  },
+  
+  // デザイン品質
+  designQuality: {
+    criteria: '視覚的に魅力的で現代的',
+    validation: 'design review, user feedback',
+    acceptance: '競合ゲームと比較して劣らない品質'
+  }
+};
+
+const TECHNICAL_QUALITY_CRITERIA = {
+  // コード品質
+  codeQuality: {
+    criteria: 'TypeScript strict mode, ESLint clean, 85%+ test coverage',
+    validation: 'automated CI/CD checks',
+    acceptance: '新規開発者が1週間以内に貢献可能'
+  },
+  
+  // アーキテクチャ品質
+  architectureQuality: {
+    criteria: 'モジュール分離、依存性注入、テスタブル設計',
+    validation: 'code review, architecture documentation',
+    acceptance: '将来機能追加時の影響範囲最小化'
+  },
+  
+  // セキュリティ
+  security: {
+    criteria: 'OWASP Top 10対応、データ保護適切',
+    validation: 'security audit, penetration testing',
+    acceptance: 'ユーザーデータの安全性保証'
+  }
+};
+```
+
+### 14.3 リリース判定基準
+
+#### MVP リリース基準（必須条件）
+```markdown
+## 機能完成度
+- [ ] 全ての基本ゲーム機能が動作（easy/normal/hardの3難易度）
+- [ ] スコア計算システムが正確に動作
+- [ ] ローカルデータ保存・復元が安定動作
+- [ ] PWA として適切にインストール・オフライン動作可能
+- [ ] レスポンシブデザインで主要デバイスサイズに対応
+
+## 品質基準
+- [ ] 単体テスト85%以上、E2Eテスト主要フロー100%カバー
+- [ ] Lighthouse Score 90点以上（全項目）
+- [ ] 主要ブラウザ（Chrome, Firefox, Safari, Edge）で動作確認
+- [ ] アクセシビリティ基準（axe-core violations = 0）クリア
+- [ ] 1週間の連続稼働テストで重大エラーなし
+
+## パフォーマンス基準
+- [ ] 初期ロード時間2秒以内（3G slowネットワーク）
+- [ ] ゲーム操作レスポンス100ms以内
+- [ ] メモリリークなし（24時間連続プレイテスト）
+- [ ] PWA キャッシュサイズ1MB未満
+
+## ドキュメント完成度
+- [ ] README.md（セットアップ・使用方法・拡張ガイド）
+- [ ] APIドキュメント（TypeScript型定義を含む）
+- [ ] デプロイメントガイド
+- [ ] 学習者向けチュートリアル
+```
+
+#### 継続改善KPI（月次評価）
+```typescript
+const CONTINUOUS_IMPROVEMENT_KPIS = {
+  // ユーザー行動分析
+  userBehaviorInsights: {
+    metrics: [
+      '難易度別プレイ時間分析',
+      'ヒント使用パターン分析', 
+      'ドロップオフポイント特定',
+      'リピート利用パターン'
+    ],
+    actionItems: '分析結果に基づくUX改善'
+  },
+  
+  // 技術負債管理
+  technicalHealth: {
+    metrics: [
+      '依存関係の最新化状況',
+      'セキュリティ脆弱性スキャン結果',
+      'パフォーマンス劣化の検出',
+      'コード複雑度の監視'
+    ],
+    actionItems: '予防的メンテナンス実行'
+  }
+};
+```
+
+---
+
 ### まとめ
 
 * **おすすめ言語**: **TypeScript**（Next.js 15）
