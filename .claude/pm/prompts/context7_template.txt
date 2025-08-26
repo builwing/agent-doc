@@ -1,0 +1,44 @@
+# 重要：Context7 MCPサーバーの使用について
+
+このプロジェクトではContext7 MCPサーバーが利用可能です。
+技術的な実装を行う際は、必ず以下の手順に従ってください：
+
+## 必須実行手順
+
+1. **最新ドキュメントの確認**
+   - 使用するライブラリ/フレームワークの最新ドキュメントをContext7で取得
+   - `mcp__context7__resolve-library-id` でライブラリIDを解決
+   - `mcp__context7__get-library-docs` で最新のドキュメントを取得
+
+2. **バージョン確認**
+   - 特に以下の重要なライブラリは最新バージョンを使用：
+     * Next.js 15 (App Router)
+     * React 19
+     * Go-Zero (最新版)
+     * Expo (SDK 51+)
+   
+3. **実装パターンの更新**
+   - 非推奨のAPIや古いパターンを避ける
+   - 最新のベストプラクティスに従う
+   - Context7から取得した例を参考にする
+
+## 使用例
+
+```bash
+# Next.jsの最新ドキュメントを取得
+1. mcp__context7__resolve-library-id で "next.js" を検索
+2. mcp__context7__get-library-docs で "/vercel/next.js" のドキュメントを取得
+
+# 特定のトピックに焦点を当てる場合
+mcp__context7__get-library-docs で topic: "app-router" を指定
+```
+
+## エラー防止のポイント
+
+- Pages RouterではなくApp Routerを使用（Next.js）
+- クラスコンポーネントではなく関数コンポーネントを使用（React）
+- 古いライフサイクルメソッドではなくHooksを使用
+- 非推奨のパッケージを避け、公式推奨のものを使用
+
+この指示に従うことで、最新の正確な実装が可能となり、
+古いコードパターンによるエラーを防ぐことができます。

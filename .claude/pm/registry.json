@@ -1,0 +1,68 @@
+{
+  "version": "1.0.0",
+  "agents": [
+    {
+      "id": "api",
+      "name": "API Agent (Go-Zero)",
+      "description": "Go-Zero framework API development specialist",
+      "primary_tools": ["goctl", "swagger"],
+      "priority": 1
+    },
+    {
+      "id": "logic",
+      "name": "Business Logic Agent",
+      "description": "Domain-driven design and business rules implementation",
+      "primary_tools": ["domain-modeling"],
+      "priority": 2
+    },
+    {
+      "id": "next",
+      "name": "Next.js Agent",
+      "description": "Next.js and React frontend development",
+      "primary_tools": ["next", "react", "tailwind"],
+      "priority": 1
+    },
+    {
+      "id": "expo",
+      "name": "Expo Agent",
+      "description": "Expo and React Native mobile development",
+      "primary_tools": ["expo", "react-native"],
+      "priority": 1
+    },
+    {
+      "id": "infra",
+      "name": "Infrastructure Agent",
+      "description": "DevOps and infrastructure management",
+      "primary_tools": ["docker", "kubernetes", "github-actions"],
+      "priority": 3
+    },
+    {
+      "id": "qa",
+      "name": "QA/Test Agent",
+      "description": "Quality assurance and test automation",
+      "primary_tools": ["jest", "playwright", "vitest"],
+      "priority": 2
+    },
+    {
+      "id": "uiux",
+      "name": "UI/UX Agent",
+      "description": "User interface and experience design",
+      "primary_tools": ["figma", "css", "animations"],
+      "priority": 3
+    },
+    {
+      "id": "security",
+      "name": "Security Agent",
+      "description": "Application security and vulnerability management",
+      "primary_tools": ["auth", "encryption", "audit"],
+      "priority": 1
+    },
+    {
+      "id": "docs",
+      "name": "Documentation Agent",
+      "description": "Technical documentation and guides",
+      "primary_tools": ["markdown", "diagrams"],
+      "priority": 4
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "version": "1.0.0",
+  "project": {
+    "name": "Agentix",
+    "description": "AI-driven development system with specialized sub-agents",
+    "type": "fullstack"
+  },
+  "agents": {
+    "auto_delegate": true,
+    "confidence_threshold": 0.7,
+    "prefer_specialized": true
+  },
+  "tools": {
+    "default_access": ["Read", "Edit", "MultiEdit", "Write", "Bash", "Grep", "Glob", "LS"],
+    "restricted": ["WebSearch", "WebFetch"],
+    "mcp_enabled": true
+  },
+  "workflow": {
+    "code_review_after_write": true,
+    "test_after_change": true,
+    "document_after_major_change": true
+  }
+}

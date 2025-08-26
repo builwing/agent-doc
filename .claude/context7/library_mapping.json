@@ -1,0 +1,98 @@
+{
+  "libraries": {
+    "go-zero": {
+      "name": "go-zero",
+      "context7_id": "/zeromicro/go-zero",
+      "agents": ["api"],
+      "description": "Go言語用マイクロサービスフレームワーク",
+      "docs_url": "https://go-zero.dev/docs",
+      "version_check": "github:zeromicro/go-zero"
+    },
+    "nextjs": {
+      "name": "Next.js",
+      "context7_id": "/vercel/next.js",
+      "agents": ["next"],
+      "description": "React製フルスタックフレームワーク",
+      "docs_url": "https://nextjs.org/docs",
+      "version_check": "npm:next"
+    },
+    "expo": {
+      "name": "Expo",
+      "context7_id": "/expo/expo",
+      "agents": ["expo"],
+      "description": "React Native開発プラットフォーム",
+      "docs_url": "https://docs.expo.dev",
+      "version_check": "npm:expo"
+    },
+    "postgresql": {
+      "name": "PostgreSQL",
+      "context7_id": "/postgresql/postgresql",
+      "agents": ["api", "infra"],
+      "description": "オープンソースリレーショナルデータベース",
+      "docs_url": "https://www.postgresql.org/docs/",
+      "version": "16"
+    },
+    "redis": {
+      "name": "Redis",
+      "context7_id": "/redis/redis",
+      "agents": ["api", "infra"],
+      "description": "インメモリデータストア",
+      "docs_url": "https://redis.io/docs",
+      "version": "7.2"
+    },
+    "docker": {
+      "name": "Docker",
+      "context7_id": "/docker/docker",
+      "agents": ["infra"],
+      "description": "コンテナ化プラットフォーム",
+      "docs_url": "https://docs.docker.com"
+    },
+    "kubernetes": {
+      "name": "Kubernetes",
+      "context7_id": "/kubernetes/kubernetes",
+      "agents": ["infra"],
+      "description": "コンテナオーケストレーション",
+      "docs_url": "https://kubernetes.io/docs"
+    },
+    "react": {
+      "name": "React",
+      "context7_id": "/facebook/react",
+      "agents": ["next", "expo"],
+      "description": "UIライブラリ",
+      "docs_url": "https://react.dev",
+      "version_check": "npm:react"
+    },
+    "typescript": {
+      "name": "TypeScript",
+      "context7_id": "/microsoft/TypeScript",
+      "agents": ["next", "expo"],
+      "description": "JavaScript型付き拡張",
+      "docs_url": "https://www.typescriptlang.org/docs",
+      "version_check": "npm:typescript"
+    },
+    "tailwindcss": {
+      "name": "Tailwind CSS",
+      "context7_id": "/tailwindlabs/tailwindcss",
+      "agents": ["next"],
+      "description": "ユーティリティファーストCSS",
+      "docs_url": "https://tailwindcss.com/docs",
+      "version_check": "npm:tailwindcss"
+    },
+    "jest": {
+      "name": "Jest",
+      "context7_id": "/facebook/jest",
+      "agents": ["qa"],
+      "description": "JavaScriptテストフレームワーク",
+      "docs_url": "https://jestjs.io/docs",
+      "version_check": "npm:jest"
+    },
+    "playwright": {
+      "name": "Playwright",
+      "context7_id": "/microsoft/playwright",
+      "agents": ["qa"],
+      "description": "E2Eテストフレームワーク",
+      "docs_url": "https://playwright.dev/docs",
+      "version_check": "npm:@playwright/test"
+    }
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "name": "GuessNumber - 数当てゲーム",
+  "short_name": "GuessNumber",
+  "description": "楽しい数当てゲーム - PWA対応",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1e293b",
+  "theme_color": "#3b82f6",
+  "orientation": "portrait-primary",
+  "categories": ["games", "entertainment"],
+  "lang": "ja",
+  "icons": [
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable any"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/desktop.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "デスクトップでのGuessNumberゲーム画面"
+    },
+    {
+      "src": "/screenshots/mobile.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "モバイルでのGuessNumberゲーム画面"
+    }
+  ]
+}

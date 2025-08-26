@@ -1,0 +1,174 @@
+# ClaudeCode Agent Configuration Template
+# API仕様システム厳守のための設定テンプレート
+# このファイルはsetup.sh実行時に.claude/にコピーされます
+
+agents:
+  # バックエンドエージェント
+  backend:
+    name: "Go-Zero Backend Agent"
+    rules:
+      - "必ずAPI仕様書（specs/*.yaml）を確認してから実装"
+      - "generated/backend/のコードは直接編集禁止"
+      - "新しいAPIは必ず仕様書から定義"
+      - "Go-Zeroの規約に従う"
+    validation:
+      pre_commit:
+        - "make validate"
+        - "make test-backend"
+      post_generate:
+        - "go fmt ./..."
+        - "go vet ./..."
+    working_directory: "generated/backend"
+    spec_directory: "specs"
+    
+  # フロントエンドエージェント  
+  frontend:
+    name: "Next.js Frontend Agent"
+    rules:
+      - "generated/frontend/の型定義を必ず使用"
+      - "APIクライアントの手動作成禁止"
+      - "Server Actionsは仕様書で定義されたものを使用"
+      - "SWR設定は仕様書に従う"
+    validation:
+      pre_commit:
+        - "make validate"
+        - "npm run type-check"
+        - "npm run lint"
+      post_generate:
+        - "prettier --write 'generated/frontend/**/*.{ts,tsx}'"
+    working_directory: "generated/frontend"
+    spec_directory: "specs"
+    
+  # モバイルエージェント
+  mobile:
+    name: "Expo Mobile Agent"
+    rules:
+      - "generated/mobile/のAPIサービスを使用"
+      - "オフライン対応は仕様書の設定に従う"
+      - "キャッシュ戦略は仕様書で定義"
+    validation:
+      pre_commit:
+        - "make validate"
+        - "npm run type-check"
+      post_generate:
+        - "prettier --write 'generated/mobile/**/*.{ts,tsx}'"
+    working_directory: "generated/mobile"
+    spec_directory: "specs"
+    
+  # テストエージェント
+  test:
+    name: "Test Agent"
+    rules:
+      - "API仕様書に基づいてテストケース作成"
+      - "モックサーバーを活用してテスト"
+      - "E2Eテストで仕様準拠を確認"
+    validation:
+      pre_test:
+        - "make mock-server &"
+        - "sleep 3"
+      post_test:
+        - "pkill -f prism"
+    working_directory: "tests"
+    spec_directory: "specs"
+
+# 共通設定
+common:
+  # 必須チェック項目
+  required_checks:
+    - name: "仕様検証"
+      command: "make validate"
+      when: "always"
+    - name: "型チェック"
+      command: "make type-check"
+      when: "on_change"
+    - name: "コード生成"
+      command: "make generate"
+      when: "on_spec_change"
+      
+  # 禁止操作
+  forbidden_actions:
+    - pattern: "generated/**/*"
+      action: "direct_edit"
+      message: "生成されたコードの直接編集は禁止です。仕様書を編集してください。"
+    - pattern: "*/api-client.ts"
+      action: "manual_create"
+      message: "APIクライアントの手動作成は禁止です。"
+      
+  # 自動実行タスク
+  auto_tasks:
+    on_spec_change:
+      - "make validate"
+      - "make generate"
+      - "git add generated/"
+    on_commit:
+      - "make validate"
+      - "make lint"
+    on_push:
+      - "make test-backend"
+      - "make test-frontend"
+
+# プロンプトテンプレート
+prompts:
+  new_endpoint:
+    template: |
+      新しいAPIエンドポイントを追加します：
+      1. specs/services/{service}.yaml を編集
+      2. エンドポイント定義を追加
+      3. make validate で検証
+      4. make generate でコード生成
+      5. 生成されたロジックに実装を追加
+      
+  update_endpoint:
+    template: |
+      既存のAPIエンドポイントを更新します：
+      1. specs/services/{service}.yaml を編集
+      2. 破壊的変更のチェック
+      3. make validate で検証
+      4. make generate でコード再生成
+      5. 影響を受ける実装を調整
+      
+  add_validation:
+    template: |
+      バリデーションルールを追加します：
+      1. 仕様書のx-validationセクションを編集
+      2. frontend/mobile別々のルールを定義
+      3. make generate で再生成
+      4. フォームコンポーネントで使用
+
+# フック設定
+hooks:
+  pre_edit:
+    - check: "is_generated_file"
+      action: "block"
+      message: "⚠️ 生成されたファイルです。仕様書を編集してください。"
+      
+  post_edit:
+    - check: "is_spec_file"
+      action: "run"
+      commands:
+        - "make validate"
+        - "echo '✅ 仕様が更新されました。make generate を実行してください。'"
+        
+  pre_commit:
+    - check: "has_spec_changes"
+      action: "run"
+      commands:
+        - "make validate"
+        - "make generate"
+        - "git add generated/"
+
+# 環境変数
+environment:
+  API_SPEC_SYSTEM: "enabled"
+  ENFORCE_SPEC_FIRST: "true"
+  AUTO_GENERATE: "true"
+  VALIDATE_ON_SAVE: "true"
+
+# メトリクス収集
+metrics:
+  track:
+    - "spec_validation_errors"
+    - "code_generation_time"
+    - "type_mismatch_count"
+    - "manual_edit_attempts"
+  report_to: "logs/agent-metrics.json"

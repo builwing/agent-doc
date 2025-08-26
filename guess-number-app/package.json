@@ -1,0 +1,82 @@
+{
+  "name": "guess-number-app",
+  "version": "1.0.0",
+  "description": "GuessNumber - 数当てゲーム（Next.js 15 + TypeScript + PWA対応）",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "lint:fix": "next lint --fix",
+    "type-check": "tsc --noEmit",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "prepare": "husky install",
+    "validate": "npm run type-check && npm run lint && npm run format:check",
+    "clean": "rm -rf .next out dist"
+  },
+  "keywords": [
+    "game",
+    "guessing",
+    "nextjs",
+    "typescript",
+    "pwa",
+    "offline",
+    "tailwindcss"
+  ],
+  "author": "GuessNumber Team",
+  "license": "MIT",
+  "dependencies": {
+    "next": "^15.5.0",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.12",
+    "@types/node": "^24.3.0",
+    "@types/react": "^19.1.11",
+    "@types/react-dom": "^19.1.7",
+    "autoprefixer": "^10.4.21",
+    "eslint": "^9.34.0",
+    "eslint-config-next": "^15.5.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.1.5",
+    "next-pwa": "^5.6.0",
+    "postcss": "^8.5.6",
+    "prettier": "^3.6.2",
+    "tailwindcss": "^4.1.12",
+    "typescript": "^5.9.2"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,css,md}": [
+      "prettier --write"
+    ]
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged",
+      "pre-push": "npm run validate"
+    }
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "browserslist": {
+    "production": [
+      ">0.3%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}
