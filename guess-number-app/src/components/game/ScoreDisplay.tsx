@@ -7,7 +7,7 @@
 import React, { useMemo, useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import type { GameState, Difficulty, ScoreResult } from '@/types/game';
+import type { GameState, Difficulty, ScoreResult, BestRecord } from '@/types/game';
 import { ScoreCalculator } from '@/lib/scoring';
 import { useBestRecord } from '@/lib/game-store';
 import { cn, formatTime } from '@/lib/utils';

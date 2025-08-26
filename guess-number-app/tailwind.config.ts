@@ -96,7 +96,7 @@ const config: Config = {
   
   plugins: [
     // カスタムユーティリティプラグイン
-    function({ addUtilities, theme }) {
+    function({ addUtilities, theme }: { addUtilities: any; theme: any }) {
       const utilities = {
         // アクセシビリティヘルパー
         '.focus-visible-ring': {
@@ -192,10 +192,10 @@ const config: Config = {
   darkMode: 'class',
   
   // JITモード最適化
-  corePlugins: {
-    // 未使用機能を無効化してバンドルサイズを削減
-    preflight: true,
-  },
+  // corePlugins: {
+  //   // 未使用機能を無効化してバンドルサイズを削減
+  //   preflight: true,
+  // },
 }
 
 export default config
