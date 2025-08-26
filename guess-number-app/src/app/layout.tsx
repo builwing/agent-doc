@@ -2,6 +2,10 @@ import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 
+// コンポーネント
+import ErrorBoundary from '@/components/ErrorBoundary';
+import { StoreInitializer } from '@/components/StoreInitializer';
+
 const inter = Inter({ subsets: ['latin'] });
 
 export const viewport: Viewport = {
@@ -79,8 +83,17 @@ export default function RootLayout({
             </div>
           </header>
           
-          <main className="flex-1 container mx-auto px-4 py-6 max-w-md">
-            {children}
+          <main className="flex-1 container mx-auto px-4 py-6 max-w-4xl">
+            <ErrorBoundary
+              onError={(error, errorInfo) => {
+                console.error('Application Error:', error, errorInfo);
+                // 本番環境では外部ログサービスに送信可能
+              }}
+              maxRetries={3}
+            >
+              <StoreInitializer />
+              {children}
+            </ErrorBoundary>
           </main>
           
           <footer className="bg-slate-200 text-slate-600 py-4 text-center text-sm">
