@@ -20,10 +20,14 @@ GuessNumberは、コンピュータが選んだ数字を推測して当てる楽
 
 - **フレームワーク**: Next.js 15 (App Router)
 - **言語**: TypeScript
-- **スタイリング**: Tailwind CSS
+- **状態管理**: Zustand
+- **スタイリング**: Tailwind CSS v4
+- **UI コンポーネント**: Headless UI + CVA
 - **PWA**: next-pwa
+- **テスト**: Vitest + React Testing Library
 - **リンター**: ESLint
 - **フォーマッター**: Prettier
+- **パッケージマネージャー**: pnpm
 - **Git Hooks**: Husky + lint-staged
 
 ## 📦 セットアップ
@@ -43,8 +47,11 @@ cd guess-number-app
 # 依存関係をインストール
 pnpm install
 
-# 開発サーバーを開始
+# 開発サーバーを開始（デフォルトポート3000）
 pnpm dev
+
+# または、ポート3003で開始する場合
+pnpm dev --port 3003
 ```
 
 ## 🎮 開発
@@ -76,7 +83,19 @@ pnpm format
 # コードフォーマットチェック
 pnpm format:check
 
-# 全体検証（型チェック + リンター + フォーマット）
+# テストを実行
+pnpm test
+
+# テストを監視モードで実行
+pnpm test:watch
+
+# テストカバレッジを確認
+pnpm test:coverage
+
+# テストUIを起動
+pnpm test:ui
+
+# 全体検証（型チェック + リンター + フォーマット + テスト）
 pnpm validate
 
 # ビルド結果をクリア
@@ -93,7 +112,16 @@ guess-number-app/
 │   │   ├── page.tsx           # メインページ
 │   │   └── globals.css        # グローバルスタイル
 │   ├── components/            # Reactコンポーネント
+│   │   ├── game/              # ゲーム関連コンポーネント
+│   │   └── ui/                # 汎用UIコンポーネント
 │   ├── lib/                   # ユーティリティとロジック
+│   │   ├── game-engine.ts     # ゲームエンジン
+│   │   ├── game-store.ts      # Zustand状態管理
+│   │   ├── difficulty.ts      # 難易度システム
+│   │   ├── hints.ts           # ヒント機能
+│   │   └── scoring.ts         # スコア計算
+│   ├── styles/                # デザイントークン
+│   ├── test/                  # テスト設定
 │   └── types/                 # TypeScript型定義
 │       └── game.ts            # ゲーム関連の型
 ├── public/
@@ -118,9 +146,9 @@ guess-number-app/
 
 | 難易度 | 範囲 | 試行回数 | 制限時間 | ヒント |
 |--------|------|----------|----------|--------|
-| かんたん | 1-30 | 10回 | なし | 2回 |
-| ふつう | 1-50 | 8回 | 60秒 | 1回 |
-| むずかしい | 1-100 | 7回 | 45秒 | 0回 |
+| イージー | 1-30 | 10回 | なし | 3回 |
+| ノーマル | 1-50 | 8回 | 90秒 | 2回 |
+| ハード | 1-100 | 7回 | 60秒 | 1回 |
 
 ## 🔧 開発時の注意事項
 
