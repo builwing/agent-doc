@@ -19,6 +19,9 @@ const GameStatus = React.lazy(() => import('@/components/game/GameStatus').then(
 const ScoreDisplay = React.lazy(() => import('@/components/game/ScoreDisplay').then(module => ({ default: module.ScoreDisplay })));
 const GameOverModal = React.lazy(() => import('@/components/game/GameOverModal').then(module => ({ default: module.GameOverModal })));
 
+// Suspenseラッパー
+import { GameSuspenseWrapper } from '@/components/SuspenseWrapper';
+
 export default function HomePage() {
   // Zustand storeから状態と関数を取得
   const {
@@ -169,13 +172,11 @@ export default function HomePage() {
 
           {/* 難易度選択 */}
           <div className="animate-fade-in" style={{ animationDelay: '0.1s' }}>
-            <React.Suspense fallback={<div className="text-center py-8">読み込み中...</div>}>
-              <DifficultySelector
-                selected={currentDifficulty}
-                onSelect={handleDifficultyChange}
-                disabled={isLoading}
-              />
-            </React.Suspense>
+            <DifficultySelector
+              selected={currentDifficulty}
+              onSelect={handleDifficultyChange}
+              disabled={isLoading}
+            />
           </div>
 
           {/* スタートボタン */}
@@ -259,13 +260,13 @@ export default function HomePage() {
         )}
 
         {/* ゲーム状況表示 */}
-        <React.Suspense fallback={<div className="card"><div className="card-body">読み込み中...</div></div>}>
+        <GameSuspenseWrapper loadingText="ゲーム情報読み込み中...">
           <GameStatus
             gameState={gameState}
             difficulty={currentDifficulty}
             stats={gameStats}
           />
-        </React.Suspense>
+        </GameSuspenseWrapper>
 
         {/* メインゲームボード */}
         <GameBoard
@@ -279,24 +280,24 @@ export default function HomePage() {
 
         {/* スコア表示（ゲーム終了時） */}
         {(gameState.status === 'won' || gameState.status === 'lost') && (
-          <React.Suspense fallback={<div className="card"><div className="card-body">読み込み中...</div></div>}>
+          <GameSuspenseWrapper loadingText="スコア計算中...">
             <ScoreDisplay
               gameState={gameState}
               difficulty={currentDifficulty}
             />
-          </React.Suspense>
+          </GameSuspenseWrapper>
         )}
 
         {/* ゲーム終了モーダル */}
         {(gameState.status === 'won' || gameState.status === 'lost') && (
-          <React.Suspense fallback={null}>
+          <GameSuspenseWrapper loadingText="結果表示準備中...">
             <GameOverModal
               gameState={gameState}
               difficulty={currentDifficulty}
               onPlayAgain={() => handleStartNewGame(currentDifficulty)}
               onChangeDifficulty={handleResetGame}
             />
-          </React.Suspense>
+          </GameSuspenseWrapper>
         )}
       </div>
     </main>
