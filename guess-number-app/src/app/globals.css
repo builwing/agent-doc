@@ -4,27 +4,101 @@
 
 /* GuessNumberアプリ用のグローバルスタイル */
 
+:root {
+  /* デザイントークンからCSS カスタムプロパティを生成 */
+  --color-primary-500: theme(colors.primary.500);
+  --color-success-500: theme(colors.success.500);
+  --color-error-500: theme(colors.error.500);
+  --color-warning-500: theme(colors.warning.500);
+  --color-neutral-500: theme(colors.neutral.500);
+  --color-neutral-700: theme(colors.neutral.700);
+  --color-neutral-900: theme(colors.neutral.900);
+  
+  /* スペーシング */
+  --spacing-2: theme(spacing.2);
+  --spacing-4: theme(spacing.4);
+  --spacing-6: theme(spacing.6);
+  
+  /* フォントファミリー */
+  --font-sans: theme(fontFamily.sans);
+  --font-mono: theme(fontFamily.mono);
+  
+  /* アニメーション */
+  --duration-fast: theme(transitionDuration.fast);
+  --duration-normal: theme(transitionDuration.normal);
+  --easing-ease-out: theme(transitionTimingFunction.easeOut);
+}
+
 @layer base {
-  /* 日本語フォント最適化 */
+  /* 日本語フォント最適化とアクセシビリティ強化 */
   html {
-    font-family: 'Inter', 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', 'Yu Gothic UI', 'Meiryo', sans-serif;
+    font-family: var(--font-sans);
     scroll-behavior: smooth;
+    /* iOS Safariでのスムーズスクロール対応 */
+    -webkit-overflow-scrolling: touch;
   }
   
-  /* フォーカスリングの改善（アクセシビリティ） */
-  :focus {
-    outline: 2px solid theme(colors.primary.500);
+  body {
+    /* フォント最適化 */
+    font-feature-settings: 'kern' 1, 'liga' 1, 'calt' 1, 'pnum' 1, 'tnum' 0, 'onum' 1, 'lnum' 0, 'dlig' 0;
+    /* テキスト描画最適化 */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    /* スクロール改善 */
+    overscroll-behavior: none;
+  }
+  
+  /* セマンティックなヘッダー階層 */
+  h1, h2, h3, h4, h5, h6 {
+    font-feature-settings: 'kern' 1, 'liga' 1, 'calt' 1, 'dlig' 1;
+    line-height: 1.2;
+    font-weight: theme(fontWeight.semibold);
+  }
+  
+  h1 { @apply text-3xl lg:text-4xl; }
+  h2 { @apply text-2xl lg:text-3xl; }
+  h3 { @apply text-xl lg:text-2xl; }
+  h4 { @apply text-lg lg:text-xl; }
+  
+  /* フォーカスリングの改善（WCAG準拠） */
+  *:focus {
+    outline: 2px solid var(--color-primary-500);
     outline-offset: 2px;
   }
   
-  :focus:not(:focus-visible) {
+  *:focus:not(:focus-visible) {
     outline: none;
   }
   
-  /* 数字入力用フォント */
+  *:focus-visible {
+    outline: 2px solid var(--color-primary-500);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 4px rgb(59 130 246 / 0.15);
+  }
+  
+  /* 数字入力とゲーム要素の最適化 */
   input[type="number"] {
-    font-feature-settings: 'tnum' on;
-    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum' on, 'lnum' on;
+    font-variant-numeric: tabular-nums lining-nums;
+    font-family: var(--font-mono);
+  }
+  
+  /* キーボードナビゲーション改善 */
+  button, [role="button"], input, select, textarea {
+    /* タッチデバイスでのタップハイライトを制御 */
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  /* 選択テキストのカスタマイズ */
+  ::selection {
+    background-color: rgb(59 130 246 / 0.2);
+    color: var(--color-neutral-900);
+  }
+  
+  ::-moz-selection {
+    background-color: rgb(59 130 246 / 0.2);
+    color: var(--color-neutral-900);
   }
 }
 
