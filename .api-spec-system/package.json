@@ -1,0 +1,34 @@
+{
+  "name": "api-spec-system",
+  "version": "1.0.0",
+  "description": "API Specification System - Go-Zero + OpenAPI Integration",
+  "main": "index.js",
+  "scripts": {
+    "validate": "node scripts/validators/validate-spec.js",
+    "generate": "bash scripts/generate.sh all",
+    "compliance": "node scripts/compliance-checker.js",
+    "type-check": "echo 'Type check placeholder'"
+  },
+  "keywords": [
+    "api",
+    "openapi",
+    "go-zero",
+    "nextjs",
+    "expo",
+    "code-generation"
+  ],
+  "author": "API Spec System",
+  "license": "MIT",
+  "devDependencies": {
+    "@apidevtools/swagger-cli": "^4.0.4",
+    "@openapitools/openapi-generator-cli": "^2.7.0",
+    "@redocly/cli": "^1.5.0",
+    "@stoplight/prism-cli": "^5.5.2",
+    "@stoplight/spectral-cli": "^6.11.0",
+    "handlebars": "^4.7.8",
+    "js-yaml": "^4.1.0",
+    "prettier": "^3.1.0",
+    "zod": "^3.22.4"
+  },
+  "dependencies": {}
+}

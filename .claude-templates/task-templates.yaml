@@ -1,0 +1,324 @@
+# ClaudeCode Task Templates
+# API仕様システムのタスクテンプレート
+# このファイルはsetup.sh実行時に.claude/にコピーされます
+
+templates:
+  # 新しいAPIエンドポイント追加
+  add_api_endpoint:
+    name: "新しいAPIエンドポイントを追加"
+    steps:
+      - action: "analyze"
+        description: "要求を分析"
+        commands:
+          - "echo '📋 要求を分析中...'"
+          - "ls -la specs/"
+      
+      - action: "edit_spec"
+        description: "仕様書を編集"
+        file_pattern: "specs/**/*.yaml"
+        template: |
+          paths:
+            /api/v1/{{resource}}:
+              {{method}}:
+                tags:
+                  - {{tag}}
+                summary: {{summary}}
+                operationId: {{operationId}}
+                x-go-zero:
+                  handler: {{handler}}Handler
+                  logic: {{handler}}Logic
+                x-frontend:
+                  swr: {{useSWR}}
+                  revalidate: {{revalidateTime}}
+                x-mobile:
+                  offline: {{offlineSupport}}
+                  cacheTime: {{cacheTime}}
+      
+      - action: "validate"
+        description: "仕様を検証"
+        commands:
+          - "make validate"
+      
+      - action: "generate"
+        description: "コードを生成"
+        commands:
+          - "make generate"
+      
+      - action: "implement"
+        description: "ロジックを実装"
+        files:
+          - "generated/backend/internal/logic/{{operationId}}logic.go"
+      
+      - action: "test"
+        description: "テストを実行"
+        commands:
+          - "make test-backend"
+          - "make test-frontend"
+
+  # 既存API更新
+  update_api_endpoint:
+    name: "既存のAPIエンドポイントを更新"
+    steps:
+      - action: "check_impact"
+        description: "影響範囲を確認"
+        commands:
+          - "grep -r '{{operationId}}' generated/"
+      
+      - action: "backup"
+        description: "現在の実装をバックアップ"
+        commands:
+          - "cp -r generated/ generated.backup/"
+      
+      - action: "update_spec"
+        description: "仕様書を更新"
+        file_pattern: "specs/**/*.yaml"
+      
+      - action: "validate_breaking"
+        description: "破壊的変更をチェック"
+        commands:
+          - "make validate"
+          - "echo '⚠️  破壊的変更がある場合は、バージョニングを検討してください'"
+      
+      - action: "regenerate"
+        description: "コードを再生成"
+        commands:
+          - "make generate"
+      
+      - action: "update_impl"
+        description: "実装を更新"
+        files:
+          - "generated/backend/internal/logic/*.go"
+      
+      - action: "test_all"
+        description: "全テストを実行"
+        commands:
+          - "make test-backend"
+          - "make test-frontend"
+          - "make test-mobile"
+
+  # バリデーション追加
+  add_validation:
+    name: "バリデーションルールを追加"
+    steps:
+      - action: "locate_schema"
+        description: "スキーマを特定"
+        commands:
+          - "grep -r '{{schemaName}}' specs/"
+      
+      - action: "add_validation"
+        description: "バリデーションを追加"
+        template: |
+          x-validation:
+            frontend:
+              required: {{required}}
+              minLength: {{minLength}}
+              maxLength: {{maxLength}}
+              pattern: "{{pattern}}"
+            mobile:
+              required: {{required}}
+              custom: "{{customValidator}}"
+      
+      - action: "regenerate"
+        description: "バリデーションコードを生成"
+        commands:
+          - "make generate"
+      
+      - action: "verify"
+        description: "バリデーションを確認"
+        commands:
+          - "cat generated/frontend/api-client.ts | grep -A 5 '{{schemaName}}Schema'"
+
+  # 認証設定
+  setup_authentication:
+    name: "認証を設定"
+    steps:
+      - action: "add_security_scheme"
+        description: "セキュリティスキームを追加"
+        file: "specs/core/api-spec.yaml"
+        template: |
+          components:
+            securitySchemes:
+              bearerAuth:
+                type: http
+                scheme: bearer
+                bearerFormat: JWT
+      
+      - action: "protect_endpoints"
+        description: "エンドポイントを保護"
+        template: |
+          security:
+            - bearerAuth: []
+      
+      - action: "configure_middleware"
+        description: "ミドルウェアを設定"
+        template: |
+          x-go-zero:
+            jwt:
+              enabled: true
+              secret: ${JWT_SECRET}
+            middleware:
+              - auth
+              - cors
+      
+      - action: "generate_auth"
+        description: "認証コードを生成"
+        commands:
+          - "make generate"
+
+  # キャッシュ設定
+  configure_cache:
+    name: "キャッシュを設定"
+    steps:
+      - action: "backend_cache"
+        description: "バックエンドキャッシュを設定"
+        template: |
+          x-go-zero:
+            cache:
+              enabled: true
+              ttl: {{ttl}}
+              key: "{{cacheKey}}"
+      
+      - action: "frontend_cache"
+        description: "フロントエンドキャッシュを設定"
+        template: |
+          x-frontend:
+            swr: true
+            revalidate: {{revalidateTime}}
+            cache:
+              tags: ["{{tag}}"]
+      
+      - action: "mobile_cache"
+        description: "モバイルキャッシュを設定"
+        template: |
+          x-mobile:
+            offline: true
+            cacheTime: {{cacheTime}}
+      
+      - action: "apply"
+        description: "設定を適用"
+        commands:
+          - "make generate"
+
+  # WebSocket追加
+  add_websocket:
+    name: "WebSocketエンドポイントを追加"
+    steps:
+      - action: "define_websocket"
+        description: "WebSocketを定義"
+        template: |
+          x-websocket:
+            /ws/{{endpoint}}:
+              description: {{description}}
+              x-go-zero:
+                handler: {{handler}}WebSocketHandler
+              x-frontend:
+                reconnect: true
+                heartbeat: 30
+              x-mobile:
+                background: true
+              messages:
+                - name: {{messageName}}
+                  direction: {{direction}}
+                  schema:
+                    $ref: '#/components/schemas/{{messageSchema}}'
+      
+      - action: "generate_ws"
+        description: "WebSocketコードを生成"
+        commands:
+          - "make generate"
+      
+      - action: "implement_handler"
+        description: "ハンドラーを実装"
+        files:
+          - "generated/backend/internal/handler/{{handler}}websockethandler.go"
+
+  # エラーハンドリング
+  setup_error_handling:
+    name: "エラーハンドリングを設定"
+    steps:
+      - action: "define_errors"
+        description: "エラーレスポンスを定義"
+        template: |
+          components:
+            schemas:
+              ErrorResponse:
+                type: object
+                required: [code, message]
+                properties:
+                  code:
+                    type: integer
+                  message:
+                    type: string
+                  details:
+                    type: object
+                  timestamp:
+                    type: string
+                    format: date-time
+      
+      - action: "add_error_responses"
+        description: "エラーレスポンスを追加"
+        template: |
+          responses:
+            '400':
+              description: バリデーションエラー
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/ErrorResponse'
+            '401':
+              description: 認証エラー
+            '403':
+              description: 権限エラー
+            '404':
+              description: リソースが見つかりません
+            '500':
+              description: サーバーエラー
+      
+      - action: "generate_errors"
+        description: "エラーハンドリングコードを生成"
+        commands:
+          - "make generate"
+
+# タスク実行ルール
+execution_rules:
+  # 実行前チェック
+  pre_execution:
+    - check: "spec_exists"
+      command: "test -f specs/core/api-spec.yaml"
+      error: "API仕様書が見つかりません"
+    
+    - check: "tools_available"
+      command: "command -v make && command -v node"
+      error: "必要なツールがインストールされていません"
+  
+  # 実行後チェック
+  post_execution:
+    - check: "validation_passed"
+      command: "make validate"
+      error: "仕様の検証に失敗しました"
+    
+    - check: "generation_complete"
+      command: "test -d generated/"
+      error: "コード生成が完了していません"
+
+# エラーリカバリー
+error_recovery:
+  validation_failed:
+    steps:
+      - "echo '❌ 仕様の検証に失敗しました'"
+      - "node scripts/validators/validate-spec.js specs/core/api-spec.yaml"
+      - "echo '上記のエラーを修正してください'"
+  
+  generation_failed:
+    steps:
+      - "echo '❌ コード生成に失敗しました'"
+      - "rm -rf generated/*"
+      - "make clean"
+      - "make generate"
+  
+  test_failed:
+    steps:
+      - "echo '❌ テストに失敗しました'"
+      - "make test-backend || true"
+      - "make test-frontend || true"
+      - "echo 'テストエラーの詳細を確認してください'"

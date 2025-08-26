@@ -1,0 +1,306 @@
+# Product Service API Specification
+openapi: 3.1.0
+info:
+  title: Product Service API
+  version: 1.0.0
+  description: 商品管理サービスAPI
+
+x-go-zero:
+  service: product-service
+  group: product
+  database:
+    driver: mysql
+    dsn: ${DATABASE_DSN}
+
+components:
+  schemas:
+    Product:
+      type: object
+      required:
+        - id
+        - name
+        - price
+        - stock
+      properties:
+        id:
+          type: string
+          format: uuid
+          x-go-zero:
+            tag: json:"id"
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+          x-go-zero:
+            tag: json:"name"
+            validate: required,min=1,max=200
+        description:
+          type: string
+          x-go-zero:
+            tag: json:"description,omitempty"
+        price:
+          type: number
+          format: double
+          minimum: 0
+          x-go-zero:
+            tag: json:"price"
+            validate: required,min=0
+        stock:
+          type: integer
+          minimum: 0
+          x-go-zero:
+            tag: json:"stock"
+            validate: required,min=0
+        category:
+          type: string
+          x-go-zero:
+            tag: json:"category,omitempty"
+        images:
+          type: array
+          items:
+            type: string
+            format: uri
+          x-go-zero:
+            tag: json:"images,omitempty"
+        createdAt:
+          type: string
+          format: date-time
+          x-go-zero:
+            tag: json:"created_at"
+        updatedAt:
+          type: string
+          format: date-time
+          x-go-zero:
+            tag: json:"updated_at"
+
+    CreateProductRequest:
+      type: object
+      required:
+        - name
+        - price
+        - stock
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+        price:
+          type: number
+          format: double
+          minimum: 0
+        stock:
+          type: integer
+          minimum: 0
+        category:
+          type: string
+        images:
+          type: array
+          items:
+            type: string
+            format: uri
+
+    UpdateProductRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+        price:
+          type: number
+          format: double
+          minimum: 0
+        stock:
+          type: integer
+          minimum: 0
+        category:
+          type: string
+        images:
+          type: array
+          items:
+            type: string
+            format: uri
+
+    ProductListResponse:
+      type: object
+      properties:
+        products:
+          type: array
+          items:
+            $ref: '#/components/schemas/Product'
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+
+paths:
+  /api/v1/products:
+    get:
+      tags:
+        - Products
+      summary: 商品一覧取得
+      operationId: getProducts
+      x-go-zero:
+        handler: GetProductsHandler
+        cache:
+          enabled: true
+          ttl: 60
+      x-frontend:
+        swr: true
+        revalidate: 30
+      x-mobile:
+        offline: true
+        cacheTime: 300
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: category
+          in: query
+          schema:
+            type: string
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductListResponse'
+
+    post:
+      tags:
+        - Products
+      summary: 商品作成
+      operationId: createProduct
+      security:
+        - bearerAuth: []
+      x-go-zero:
+        handler: CreateProductHandler
+      x-frontend:
+        invalidatesCache:
+          - /api/v1/products
+      x-mobile:
+        offline: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProductRequest'
+      responses:
+        '201':
+          description: 作成成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+
+  /api/v1/products/{id}:
+    get:
+      tags:
+        - Products
+      summary: 商品詳細取得
+      operationId: getProductById
+      x-go-zero:
+        handler: GetProductHandler
+        cache:
+          enabled: true
+          ttl: 300
+      x-frontend:
+        swr: true
+        revalidate: 60
+      x-mobile:
+        offline: true
+        cacheTime: 600
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '404':
+          description: 商品が見つかりません
+
+    put:
+      tags:
+        - Products
+      summary: 商品更新
+      operationId: updateProduct
+      security:
+        - bearerAuth: []
+      x-go-zero:
+        handler: UpdateProductHandler
+      x-frontend:
+        invalidatesCache:
+          - /api/v1/products
+          - /api/v1/products/{id}
+      x-mobile:
+        offline: true
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProductRequest'
+      responses:
+        '200':
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+
+    delete:
+      tags:
+        - Products
+      summary: 商品削除
+      operationId: deleteProduct
+      security:
+        - bearerAuth: []
+      x-go-zero:
+        handler: DeleteProductHandler
+      x-frontend:
+        invalidatesCache:
+          - /api/v1/products
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: 削除成功

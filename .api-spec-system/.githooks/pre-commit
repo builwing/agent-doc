@@ -1,0 +1,143 @@
+#!/bin/bash
+
+# API Specification System - Pre-commit Hook
+# 仕様準拠を確認してからコミットを許可
+
+set -e
+
+# Colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+echo -e "${BLUE}🔍 API Specification Compliance Check${NC}"
+echo "========================================="
+
+# 1. Check if spec files have been modified
+SPEC_CHANGED=false
+if git diff --cached --name-only | grep -q "specs/.*\.yaml\|specs/.*\.yml"; then
+    SPEC_CHANGED=true
+    echo -e "${YELLOW}📝 API仕様書が変更されています${NC}"
+fi
+
+# 2. Check if generated files have been manually edited
+GENERATED_EDITED=false
+if git diff --cached --name-only | grep -q "generated/"; then
+    GENERATED_EDITED=true
+    echo -e "${RED}⚠️  警告: generated/ディレクトリのファイルが変更されています${NC}"
+    echo "生成されたコードは直接編集しないでください。"
+    read -p "本当に続行しますか？ (y/N): " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        echo -e "${RED}❌ コミットを中止しました${NC}"
+        exit 1
+    fi
+fi
+
+# 3. Validate specifications
+if [ "$SPEC_CHANGED" = true ]; then
+    echo -e "${BLUE}📋 仕様書の検証中...${NC}"
+    
+    # Find all changed spec files
+    for spec_file in $(git diff --cached --name-only | grep "specs/.*\.yaml\|specs/.*\.yml"); do
+        if [ -f "$spec_file" ]; then
+            echo "  Validating: $spec_file"
+            node scripts/validators/validate-spec.js "$spec_file" || {
+                echo -e "${RED}❌ 仕様書の検証に失敗しました: $spec_file${NC}"
+                exit 1
+            }
+        fi
+    done
+    
+    echo -e "${GREEN}✅ 仕様書の検証完了${NC}"
+    
+    # 4. Regenerate code if specs changed
+    echo -e "${BLUE}🔧 コード生成中...${NC}"
+    make generate || {
+        echo -e "${RED}❌ コード生成に失敗しました${NC}"
+        exit 1
+    }
+    
+    # Check if generated files have changes
+    if [ -n "$(git diff generated/)" ]; then
+        echo -e "${YELLOW}📦 生成されたコードに変更があります${NC}"
+        echo "以下のファイルが更新されました："
+        git diff --name-only generated/
+        
+        # Add generated files to commit
+        git add generated/
+        echo -e "${GREEN}✅ 生成されたファイルをコミットに追加しました${NC}"
+    fi
+fi
+
+# 5. Run type checks
+echo -e "${BLUE}🔍 型チェック実行中...${NC}"
+
+# Check backend (Go)
+if [ -d "generated/backend" ]; then
+    echo "  Go型チェック..."
+    cd generated/backend
+    if command -v go >/dev/null 2>&1; then
+        go fmt ./... || true
+        go vet ./... || {
+            echo -e "${RED}❌ Go型チェックに失敗しました${NC}"
+            cd ../..
+            exit 1
+        }
+    fi
+    cd ../..
+fi
+
+# Check frontend (TypeScript)
+if [ -d "generated/frontend" ] && [ -f "generated/frontend/package.json" ]; then
+    echo "  TypeScript型チェック..."
+    cd generated/frontend
+    if command -v npm >/dev/null 2>&1; then
+        npm run type-check 2>/dev/null || {
+            echo -e "${YELLOW}⚠️  TypeScript型チェックをスキップ（未設定）${NC}"
+        }
+    fi
+    cd ../..
+fi
+
+echo -e "${GREEN}✅ 型チェック完了${NC}"
+
+# 6. Check for consistency
+echo -e "${BLUE}🔍 一貫性チェック...${NC}"
+
+# Check if all required files exist
+REQUIRED_FILES=(
+    "api-spec-system/README.md"
+    "api-spec-system/Makefile"
+    "CLAUDE.md"
+)
+
+for file in "${REQUIRED_FILES[@]}"; do
+    if [ ! -f "$file" ]; then
+        echo -e "${YELLOW}⚠️  推奨ファイルが見つかりません: $file${NC}"
+    fi
+done
+
+# 7. Final validation
+echo -e "${BLUE}🎯 最終検証...${NC}"
+
+# Check commit message
+COMMIT_MSG_FILE=".git/COMMIT_EDITMSG"
+if [ -f "$COMMIT_MSG_FILE" ]; then
+    COMMIT_MSG=$(cat "$COMMIT_MSG_FILE")
+    
+    # Check for spec-related keywords if specs were changed
+    if [ "$SPEC_CHANGED" = true ]; then
+        if ! echo "$COMMIT_MSG" | grep -qiE "spec|api|仕様|specification"; then
+            echo -e "${YELLOW}⚠️  コミットメッセージにAPI仕様の変更について記載してください${NC}"
+        fi
+    fi
+fi
+
+echo "========================================="
+echo -e "${GREEN}✅ すべてのチェックが完了しました！${NC}"
+echo -e "${GREEN}📝 コミットを続行します...${NC}"
+
+exit 0
