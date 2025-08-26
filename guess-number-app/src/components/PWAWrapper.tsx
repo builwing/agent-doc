@@ -287,7 +287,7 @@ export const PWAWrapper: React.FC<{ children: React.ReactNode }> = ({ children }
           role="dialog"
           aria-labelledby="update-banner-title"
         >
-          <Card variant="info" className="shadow-2xl">
+          <Card variant="primary" className="shadow-2xl">
             <CardContent className="p-4">
               <div className="flex items-start gap-3">
                 <div className="text-2xl">🔄</div>
@@ -304,7 +304,7 @@ export const PWAWrapper: React.FC<{ children: React.ReactNode }> = ({ children }
                   
                   <div className="flex gap-2">
                     <Button
-                      variant="info"
+                      variant="primary"
                       size="sm"
                       onClick={handleSWUpdate}
                       className="text-xs"

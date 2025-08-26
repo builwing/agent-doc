@@ -226,7 +226,7 @@ export const useLazyLoading = (delay: number = 300) => {
  * バッチローディング用のHook
  * 複数のリソースを効率的に読み込む
  */
-export const useBatchLoading = <T>(
+export const useBatchLoading = <T,>(
   loadFunctions: (() => Promise<T>)[],
   options: {
     batchSize?: number;

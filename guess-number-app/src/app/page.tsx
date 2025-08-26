@@ -173,9 +173,9 @@ export default function HomePage() {
           {/* 難易度選択 */}
           <div className="animate-fade-in" style={{ animationDelay: '0.1s' }}>
             <DifficultySelector
-              selected={currentDifficulty}
-              onSelect={handleDifficultyChange}
-              disabled={isLoading}
+              selectedDifficulty={currentDifficulty}
+              onDifficultyChange={handleDifficultyChange}
+              onStartGame={handleStartNewGame}
             />
           </div>
 

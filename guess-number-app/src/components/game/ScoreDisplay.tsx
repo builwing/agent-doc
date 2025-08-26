@@ -40,7 +40,7 @@ export const ScoreDisplay: React.FC<ScoreDisplayProps> = ({
   const [showConfetti, setShowConfetti] = useState(false);
   
   // ベスト記録を取得
-  const bestRecord = useBestRecord(difficulty);
+  const bestRecord = useBestRecord(difficulty) as BestRecord | null;
   
   // スコア計算
   const scoreResult = useMemo(() => {
@@ -94,7 +94,7 @@ export const ScoreDisplay: React.FC<ScoreDisplayProps> = ({
   // スコアなしの場合
   if (!scoreResult) {
     return (
-      <Card variant="neutral" className={cn('opacity-60', className)}>
+      <Card variant="default" className={cn('opacity-60', className)}>
         <CardContent className="text-center py-6">
           <p className="text-neutral-600">
             {gameState.status === 'lost' 
