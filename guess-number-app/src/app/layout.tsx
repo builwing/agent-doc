@@ -3,7 +3,6 @@ import { Inter } from 'next/font/google';
 import './globals.css';
 
 // コンポーネント
-import ErrorBoundary from '@/components/ErrorBoundary';
 import { StoreInitializer } from '@/components/StoreInitializer';
 import PWAWrapper from '@/components/PWAWrapper';
 
@@ -86,16 +85,8 @@ export default function RootLayout({
           
           <main className="flex-1 container mx-auto px-4 py-6 max-w-4xl">
             <PWAWrapper>
-              <ErrorBoundary
-                onError={(error, errorInfo) => {
-                  console.error('Application Error:', error, errorInfo);
-                  // 本番環境では外部ログサービスに送信可能
-                }}
-                maxRetries={3}
-              >
-                <StoreInitializer />
-                {children}
-              </ErrorBoundary>
+              <StoreInitializer />
+              {children}
             </PWAWrapper>
           </main>
           
