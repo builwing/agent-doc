@@ -1,193 +1,304 @@
 /**
  * GuessNumber メインゲーム画面
  * Next.js 15 App Router対応
+ * Zustand状態管理とGameEngineを統合
  */
 'use client';
 
-import { useState } from 'react';
-import type { Difficulty, GameState } from '@/types/game';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import { GameBoard } from '@/components/game/GameBoard';
+import { DifficultySelector } from '@/components/game/DifficultySelector';
+import { useGameStore } from '@/lib/game-store';
+import type { Difficulty, HintType } from '@/types/game';
 import { DIFFICULTY_CONFIGS } from '@/types/game';
+import { cn } from '@/lib/utils';
+
+// 追加コンポーネントの動的インポート（パフォーマンス最適化）
+const NumberInput = React.lazy(() => import('@/components/game/NumberInput').then(module => ({ default: module.NumberInput })));
+const GameStatus = React.lazy(() => import('@/components/game/GameStatus').then(module => ({ default: module.GameStatus })));
+const ScoreDisplay = React.lazy(() => import('@/components/game/ScoreDisplay').then(module => ({ default: module.ScoreDisplay })));
+const GameOverModal = React.lazy(() => import('@/components/game/GameOverModal').then(module => ({ default: module.GameOverModal })));
 
 export default function HomePage() {
-  // 初期状態: ゲーム選択画面
-  const [gameState, setGameState] = useState<GameState | null>(null);
-  const [selectedDifficulty, setSelectedDifficulty] = useState<Difficulty>('normal');
+  // Zustand storeから状態と関数を取得
+  const {
+    gameState,
+    currentDifficulty,
+    isPlaying,
+    startNewGame,
+    makeGuess,
+    useHint,
+    resetGame,
+    pauseGame,
+    resumeGame,
+    setDifficulty,
+  } = useGameStore();
 
-  // 新しいゲームを開始する関数
-  const startNewGame = (difficulty: Difficulty) => {
-    const config = DIFFICULTY_CONFIGS[difficulty];
-    const target = Math.floor(Math.random() * config.upper) + 1;
+  // ローカル状態（UI関連）
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [hintMessage, setHintMessage] = useState<string | null>(null);
+
+  // ストア初期化（初回マウント時のみ）
+  useEffect(() => {
+    const store = useGameStore.getState();
+    store.loadFromStorage();
+  }, []);
+
+  // 新しいゲームを開始
+  const handleStartNewGame = useCallback(async (difficulty: Difficulty) => {
+    setIsLoading(true);
+    setError(null);
     
-    const newGameState: GameState = {
-      target,
-      upper: config.upper,
-      guesses: [],
-      attemptsLeft: config.attempts,
-      timeLeftSec: config.timeLimitSec,
-      status: 'playing',
-      startedAt: Date.now(),
-      hintsUsed: 0,
-      currentRange: [1, config.upper],
-    };
+    try {
+      startNewGame(difficulty);
+      console.log(`新規ゲーム開始: 難易度=${difficulty}`);
+    } catch (err) {
+      console.error('ゲーム開始エラー:', err);
+      setError('ゲームの開始に失敗しました。再度お試しください。');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [startNewGame]);
+
+  // 推測処理
+  const handleGuess = useCallback(async (guess: number) => {
+    if (!gameState || isLoading) return;
     
-    setGameState(newGameState);
-    console.log(`ゲーム開始: 難易度=${difficulty}, 正解=${target}`); // デバッグ用
-  };
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const result = await makeGuess(guess);
+      console.log('推測結果:', result);
+      
+      // 結果に応じてフィードバックを表示
+      if (result.result.won) {
+        // 勝利時の処理は GameOverModal で処理
+      } else if (result.result.gameEnded && !result.result.won) {
+        // 敗北時の処理は GameOverModal で処理
+      }
+    } catch (err) {
+      console.error('推測エラー:', err);
+      setError(err instanceof Error ? err.message : '推測の処理に失敗しました');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [gameState, makeGuess, isLoading]);
+
+  // ヒント使用
+  const handleUseHint = useCallback(() => {
+    if (!gameState || isLoading) return;
+    
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      // まずは範囲ヒントを使用（後で種類選択機能を追加予定）
+      const hint = useHint('range');
+      setHintMessage(hint.message);
+      
+      // 3秒後にヒントメッセージを非表示
+      setTimeout(() => setHintMessage(null), 3000);
+    } catch (err) {
+      console.error('ヒント使用エラー:', err);
+      setError(err instanceof Error ? err.message : 'ヒントの取得に失敗しました');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [gameState, useHint, isLoading]);
 
   // ゲームリセット
-  const resetGame = () => {
-    setGameState(null);
-  };
+  const handleResetGame = useCallback(() => {
+    resetGame();
+    setError(null);
+    setHintMessage(null);
+  }, [resetGame]);
 
-  // ゲーム中でない場合は、難易度選択画面を表示
-  if (!gameState || gameState.status === 'idle') {
+  // 難易度設定
+  const handleDifficultyChange = useCallback((difficulty: Difficulty) => {
+    setDifficulty(difficulty);
+  }, [setDifficulty]);
+
+  // 現在の統計を計算
+  const gameStats = useMemo(() => {
+    if (!gameState) {
+      return null;
+    }
+    
+    const timeElapsed = gameState.startedAt ? 
+      Math.floor((Date.now() - gameState.startedAt) / 1000) : 0;
+    const attemptsUsed = gameState.guesses.length;
+    
+    return {
+      timeElapsed,
+      attemptsUsed,
+      hintsUsed: gameState.hintsUsed,
+      currentRange: gameState.currentRange,
+    };
+  }, [gameState]);
+
+  // ゲーム未開始時は難易度選択画面を表示
+  if (!gameState || gameState.status === 'idle' || !isPlaying) {
     return (
-      <div className="space-y-6 animate-fade-in">
-        <div className="card">
-          <div className="card-body text-center">
-            <h2 className="text-2xl font-bold mb-4 text-slate-800">
-              ゲームを始めよう！
-            </h2>
-            <p className="text-slate-600 mb-6">
+      <main className={cn(
+        'min-h-screen bg-gradient-to-br from-primary-50 via-white to-secondary-50',
+        'px-4 py-8 sm:px-6 lg:px-8'
+      )}>
+        <div className="mx-auto max-w-4xl space-y-6">
+          {/* メインタイトル */}
+          <header className="text-center animate-fade-in">
+            <h1 className="text-4xl font-bold text-primary-900 mb-2">
+              🎯 GuessNumber
+            </h1>
+            <p className="text-lg text-neutral-600 max-w-2xl mx-auto">
               数を推測して正解を当てるゲームです。<br />
-              難易度を選んでスタートしてください。
+              難易度を選んでスタートしてください！
             </p>
-            
-            {/* 難易度選択 */}
-            <div className="space-y-4 mb-6">
-              {(Object.keys(DIFFICULTY_CONFIGS) as Difficulty[]).map((difficulty) => {
-                const config = DIFFICULTY_CONFIGS[difficulty];
-                const isSelected = selectedDifficulty === difficulty;
-                
-                return (
-                  <button
-                    key={difficulty}
-                    onClick={() => setSelectedDifficulty(difficulty)}
-                    className={`w-full p-4 rounded-lg border-2 transition-all ${
-                      isSelected
-                        ? 'border-primary-500 bg-primary-50 text-primary-700'
-                        : 'border-slate-200 bg-white hover:border-slate-300'
-                    }`}
-                  >
-                    <div className="text-left">
-                      <div className="font-semibold text-lg capitalize">
-                        {difficulty === 'easy' && '🟢 かんたん'}
-                        {difficulty === 'normal' && '🟡 ふつう'}
-                        {difficulty === 'hard' && '🔴 むずかしい'}
-                      </div>
-                      <div className="text-sm text-slate-600 mt-1">
-                        範囲: 1-{config.upper} | 
-                        試行回数: {config.attempts}回 | 
-                        {config.timeLimitSec ? `制限時間: ${config.timeLimitSec}秒` : '時間制限なし'}
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
+          </header>
+
+          {/* エラー表示 */}
+          {error && (
+            <div className="card variant-error animate-fade-in" role="alert">
+              <div className="card-body">
+                <h3 className="font-semibold text-error-800 mb-1">エラー</h3>
+                <p className="text-error-700">{error}</p>
+              </div>
             </div>
-            
-            {/* スタートボタン */}
+          )}
+
+          {/* 難易度選択 */}
+          <div className="animate-fade-in" style={{ animationDelay: '0.1s' }}>
+            <React.Suspense fallback={<div className="text-center py-8">読み込み中...</div>}>
+              <DifficultySelector
+                selected={currentDifficulty}
+                onSelect={handleDifficultyChange}
+                disabled={isLoading}
+              />
+            </React.Suspense>
+          </div>
+
+          {/* スタートボタン */}
+          <div className="text-center animate-fade-in" style={{ animationDelay: '0.2s' }}>
             <button
-              onClick={() => startNewGame(selectedDifficulty)}
-              className="btn-primary text-xl px-8 py-4 w-full"
+              onClick={() => handleStartNewGame(currentDifficulty)}
+              disabled={isLoading}
+              className={cn(
+                'btn-primary text-xl px-8 py-4 min-w-[200px]',
+                'disabled:opacity-50 disabled:cursor-not-allowed',
+                'transform transition-transform hover:scale-105'
+              )}
+              aria-label={`${DIFFICULTY_CONFIGS[currentDifficulty].upper}まで範囲でゲームを開始`}
             >
-              🎮 ゲームスタート
+              {isLoading ? (
+                <>⏳ 準備中...</>
+              ) : (
+                <>🎮 ゲームスタート</>
+              )}
             </button>
           </div>
-        </div>
-        
-        {/* ゲームルール説明 */}
-        <div className="card">
-          <div className="card-body">
-            <h3 className="font-semibold mb-3">📋 ゲームのルール</h3>
-            <ul className="text-sm text-slate-600 space-y-2">
-              <li>• コンピュータが選んだ数字を推測してください</li>
-              <li>• 推測すると「もっと大きい」「もっと小さい」のヒントが出ます</li>
-              <li>• 制限回数内に正解を当てるとクリアです</li>
-              <li>• 難易度が高いほど範囲が広く、制限が厳しくなります</li>
-            </ul>
+
+          {/* ゲームルール説明 */}
+          <div className="card animate-fade-in" style={{ animationDelay: '0.3s' }}>
+            <div className="card-body">
+              <h2 className="text-xl font-semibold mb-4 text-primary-800">
+                📋 ゲームのルール
+              </h2>
+              <div className="grid md:grid-cols-2 gap-6">
+                <div>
+                  <h3 className="font-semibold mb-2 text-neutral-800">基本ルール</h3>
+                  <ul className="text-sm text-neutral-600 space-y-1">
+                    <li>• コンピュータが選んだ数字を推測</li>
+                    <li>• 「もっと大きい」「もっと小さい」のヒント</li>
+                    <li>• 制限回数内に正解を目指そう</li>
+                    <li>• ヒント機能で推測をサポート</li>
+                  </ul>
+                </div>
+                <div>
+                  <h3 className="font-semibold mb-2 text-neutral-800">スコアシステム</h3>
+                  <ul className="text-sm text-neutral-600 space-y-1">
+                    <li>• 残り試行回数でボーナス</li>
+                    <li>• 残り時間でタイムボーナス</li>
+                    <li>• 3回以内クリアでパーフェクトボーナス</li>
+                    <li>• 難易度が高いほど高得点</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      </main>
     );
   }
 
   // ゲーム進行中の画面
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* ゲーム状況表示 */}
-      <div className="card">
-        <div className="card-body">
-          <div className="flex justify-between items-center mb-4">
-            <div className="text-sm text-slate-600">
-              範囲: 1-{gameState.upper}
-            </div>
-            <div className="text-sm text-slate-600">
-              残り: {gameState.attemptsLeft}回
+    <main className={cn(
+      'min-h-screen bg-gradient-to-br from-primary-50 via-white to-secondary-50',
+      'px-4 py-8 sm:px-6 lg:px-8'
+    )}>
+      <div className="mx-auto max-w-4xl space-y-6">
+        {/* エラー表示 */}
+        {error && (
+          <div className="card variant-error animate-fade-in" role="alert">
+            <div className="card-body">
+              <h3 className="font-semibold text-error-800 mb-1">エラー</h3>
+              <p className="text-error-700">{error}</p>
             </div>
           </div>
-          
-          {gameState.timeLeftSec !== undefined && (
-            <div className="mb-4">
-              <div className="text-center text-sm text-slate-600">
-                残り時間: {gameState.timeLeftSec}秒
-              </div>
-              <div className="w-full bg-slate-200 rounded-full h-2 mt-2">
-                <div 
-                  className="bg-primary-600 h-2 rounded-full transition-all duration-1000"
-                  style={{
-                    width: `${(gameState.timeLeftSec / (DIFFICULTY_CONFIGS[selectedDifficulty].timeLimitSec || 60)) * 100}%`
-                  }}
-                />
-              </div>
+        )}
+
+        {/* ヒントメッセージ表示 */}
+        {hintMessage && (
+          <div className="card variant-success animate-bounce-in" role="status" aria-live="polite">
+            <div className="card-body">
+              <h3 className="font-semibold text-success-800 mb-1">💡 ヒント</h3>
+              <p className="text-success-700">{hintMessage}</p>
             </div>
-          )}
-          
-          <div className="text-center">
-            <p className="text-lg text-slate-700 mb-4">
-              1から{gameState.upper}の間で数字を推測してください
-            </p>
-            
-            {/* 入力フィールド（実装は次回） */}
-            <div className="mb-4">
-              <input
-                type="number"
-                min="1"
-                max={gameState.upper}
-                className="input text-center text-2xl font-mono"
-                placeholder="数字を入力"
-                disabled
-              />
-            </div>
-            
-            <button className="btn-primary" disabled>
-              推測する
-            </button>
-            
-            <p className="text-sm text-slate-500 mt-4">
-              ※ ゲームロジックは次回実装予定
-            </p>
           </div>
-        </div>
+        )}
+
+        {/* ゲーム状況表示 */}
+        <React.Suspense fallback={<div className="card"><div className="card-body">読み込み中...</div></div>}>
+          <GameStatus
+            gameState={gameState}
+            difficulty={currentDifficulty}
+            stats={gameStats}
+          />
+        </React.Suspense>
+
+        {/* メインゲームボード */}
+        <GameBoard
+          gameState={gameState}
+          onGuess={handleGuess}
+          onUseHint={handleUseHint}
+          onPause={pauseGame}
+          onQuit={handleResetGame}
+          className="animate-fade-in"
+        />
+
+        {/* スコア表示（ゲーム終了時） */}
+        {(gameState.status === 'won' || gameState.status === 'lost') && (
+          <React.Suspense fallback={<div className="card"><div className="card-body">読み込み中...</div></div>}>
+            <ScoreDisplay
+              gameState={gameState}
+              difficulty={currentDifficulty}
+            />
+          </React.Suspense>
+        )}
+
+        {/* ゲーム終了モーダル */}
+        {(gameState.status === 'won' || gameState.status === 'lost') && (
+          <React.Suspense fallback={null}>
+            <GameOverModal
+              gameState={gameState}
+              difficulty={currentDifficulty}
+              onPlayAgain={() => handleStartNewGame(currentDifficulty)}
+              onChangeDifficulty={handleResetGame}
+            />
+          </React.Suspense>
+        )}
       </div>
-      
-      {/* 推測履歴（実装は次回） */}
-      <div className="card">
-        <div className="card-body">
-          <h3 className="font-semibold mb-3">📝 推測履歴</h3>
-          <p className="text-slate-500 text-center py-4">
-            まだ推測していません
-          </p>
-        </div>
-      </div>
-      
-      {/* リセットボタン */}
-      <button
-        onClick={resetGame}
-        className="btn-secondary w-full"
-      >
-        ゲームをやり直す
-      </button>
-    </div>
+    </main>
   );
 }
